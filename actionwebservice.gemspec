@@ -1,6 +1,6 @@
 ## --------------------------------------------------------------------------------
 ## NOTE:
-## This file is not really used at the moment - the *REAL* copy is inside 
+## This file is not really used at the moment - the *REAL* copy is inside
 ## the Rakefile and invoked via 'rake package'
 ## --------------------------------------------------------------------------------
 Gem::Specification.new do |s|
@@ -14,9 +14,9 @@ Gem::Specification.new do |s|
   s.email = "rubyjedi@gmail.com, bitserf@gmail.com, ksibilev@yahoo.com"
   s.homepage = "http://wiki.github.com/rubyjedi/actionwebservice/"
 
-  s.add_dependency('activesupport', '~> 2.3.0')
-  s.add_dependency('actionpack',    '~> 2.3.0')
-  s.add_dependency('activerecord',  '~> 2.3.0')
+  s.add_dependency('activesupport')
+  s.add_dependency('actionpack')
+  s.add_dependency('activerecord')
 
   s.has_rdoc = true
   s.requirements << 'none'
