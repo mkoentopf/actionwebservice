@@ -18,6 +18,8 @@ Gem::Specification.new do |s|
   s.add_dependency('actionpack')
   s.add_dependency('activerecord')
 
+  s.add_development_dependency 'pry'
+
   s.has_rdoc = true
   s.requirements << 'none'
   s.require_path = 'lib'
