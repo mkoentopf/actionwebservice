@@ -54,7 +54,7 @@ module ActionWebService # :nodoc:
         end
 
         def decode_request(raw_request, service_name, protocol_options={})
-          envelope = SOAP::Processor.unmarshal(raw_request, :charset => protocol_options[:charset])
+          envelope = SOAP::Processor.unmarshal(raw_request.strip, :charset => protocol_options[:charset])
           unless envelope
             raise ProtocolError, "Failed to parse SOAP request message"
           end
