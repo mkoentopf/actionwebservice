@@ -36,117 +36,118 @@ module ActionWebService # :nodoc:
       end
 
       module InstanceMethods # :nodoc:
-        private
-          def log_error(exception=nil)
-            if exception
-              message = "\n#{exception.class} (#{exception.message}):\n"
-              Rails.logger.fatal message
-            end
+        def log_error(exception=nil)
+          if exception
+            message = "\n#{exception.class} (#{exception.message}):\n"
+            Rails.logger.fatal message
           end
+        end
 
-          def dispatch_web_service_request
-            method = request.method.to_s.upcase
-            allowed_methods = self.class.web_service_api ? (self.class.web_service_api.allowed_http_methods || []) : [ :post ]
-            allowed_methods = allowed_methods.map{|m| m.to_s.upcase }
-            if !allowed_methods.include?(method)
-              render :text => "#{method} not supported", :status=>500
-              return
-            end
+        private
+
+        def dispatch_web_service_request
+          method = request.method.to_s.upcase
+          allowed_methods = self.class.web_service_api ? (self.class.web_service_api.allowed_http_methods || []) : [ :post ]
+          allowed_methods = allowed_methods.map{|m| m.to_s.upcase }
+          if !allowed_methods.include?(method)
+            render :text => "#{method} not supported", :status=>500
+            return
+          end
+          exception = nil
+          begin
+            ws_request = discover_web_service_request(request)
+          rescue Exception => e
+            exception = e
+          end
+          if ws_request
+            ws_response = nil
             exception = nil
-            begin
-              ws_request = discover_web_service_request(request)
-            rescue Exception => e
-              exception = e
+            bm = Benchmark.measure do
+              begin
+                ws_response = invoke_web_service_request(ws_request)
+              rescue Exception => e
+                exception = e
+              end
             end
-            if ws_request
-              ws_response = nil
-              exception = nil
-              bm = Benchmark.measure do
-                begin
-                  ws_response = invoke_web_service_request(ws_request)
-                rescue Exception => e
-                  exception = e
-                end
-              end
-              log_request(ws_request, request.raw_post)
-              if exception
-                log_error(exception) unless Rails.logger.nil?
-                send_web_service_error_response(ws_request, exception)
-              else
-                send_web_service_response(ws_response, bm.real)
-              end
-            else
-              exception ||= DispatcherError.new("Malformed SOAP or XML-RPC protocol message")
+            log_request(ws_request, request.raw_post)
+            if exception
               log_error(exception) unless Rails.logger.nil?
               send_web_service_error_response(ws_request, exception)
-            end
-          rescue Exception => e
-            log_error(e) unless Rails.logger.nil?
-            send_web_service_error_response(ws_request, e)
-          end
-
-          def send_web_service_response(ws_response, elapsed=nil)
-            log_response(ws_response, elapsed)
-            options = { :type => ws_response.content_type, :disposition => 'inline' }
-            send_data(ws_response.body, options)
-          end
-
-          def send_web_service_error_response(ws_request, exception)
-            if ws_request
-              unless self.class.web_service_exception_reporting
-                exception = DispatcherError.new("Internal server error (exception raised)")
-              end
-              api_method = ws_request.api_method
-              public_method_name = api_method ? api_method.public_name : ws_request.method_name
-              return_type = ActionWebService::SignatureTypes.canonical_signature_entry(Exception, 0)
-              ws_response = ws_request.protocol.encode_response(public_method_name + 'Response', exception, return_type, ws_request.protocol_options)
-              send_web_service_response(ws_response)
             else
-              if self.class.web_service_exception_reporting
-                message = exception.message
-                backtrace = "\nBacktrace:\n#{exception.backtrace.join("\n")}"
-              else
-                message = "Exception raised"
-                backtrace = ""
-              end
-              render :status => 500, :text => "Internal protocol error: #{message}#{backtrace}"
+              send_web_service_response(ws_response, bm.real)
             end
+          else
+            exception ||= DispatcherError.new("Malformed SOAP or XML-RPC protocol message")
+            log_error(exception) unless Rails.logger.nil?
+            send_web_service_error_response(ws_request, exception)
           end
+        rescue Exception => e
+          log_error(e) unless Rails.logger.nil?
+          send_web_service_error_response(ws_request, e)
+        end
 
-          def web_service_direct_invoke(invocation)
-            invocation.method_named_params.each do |name, value|
-              params[name] = value
+        def send_web_service_response(ws_response, elapsed=nil)
+          log_response(ws_response, elapsed)
+          options = { :type => ws_response.content_type, :disposition => 'inline' }
+          send_data(ws_response.body, options)
+        end
+
+        def send_web_service_error_response(ws_request, exception)
+          if ws_request
+            unless self.class.web_service_exception_reporting
+              exception = DispatcherError.new("Internal server error (exception raised)")
             end
-            web_service_direct_invoke_without_controller(invocation)
-          end
-
-          def log_request(ws_request, body)
-            unless Rails.logger.nil?
-              name = ws_request.method_name
-              api_method = ws_request.api_method
-              params = ws_request.method_params
-              if api_method && api_method.expects
-                params = api_method.expects.zip(params).map{ |type, param| "#{type.name}=>#{param.inspect}" }
-              else
-                params = params.map{ |param| param.inspect }
-              end
-              service = ws_request.service_name
-              Rails.logger.debug("\nWeb Service Request: #{name}(#{params.join(", ")}) Entrypoint: #{service}")
-              Rails.logger.debug(indent(body))
+            api_method = ws_request.api_method
+            public_method_name = api_method ? api_method.public_name : ws_request.method_name
+            return_type = ActionWebService::SignatureTypes.canonical_signature_entry(Exception, 0)
+            ws_response = ws_request.protocol.encode_response(public_method_name + 'Response', exception, return_type, ws_request.protocol_options)
+            send_web_service_response(ws_response)
+          else
+            if self.class.web_service_exception_reporting
+              message = exception.message
+              backtrace = "\nBacktrace:\n#{exception.backtrace.join("\n")}"
+            else
+              message = "Exception raised"
+              backtrace = ""
             end
+            render :status => 500, :text => "Internal protocol error: #{message}#{backtrace}"
           end
+        end
 
-          def log_response(ws_response, elapsed=nil)
-            unless Rails.logger.nil?
-              elapsed = (elapsed ? " (%f):" % elapsed : ":")
-              Rails.logger.debug("\nWeb Service Response" + elapsed + " => #{ws_response.return_value.inspect}")
-              Rails.logger.debug(indent(ws_response.body))
+        def web_service_direct_invoke(invocation)
+          invocation.method_named_params.each do |name, value|
+            params[name] = value
+          end
+          web_service_direct_invoke_without_controller(invocation)
+        end
+
+        def log_request(ws_request, body)
+          unless Rails.logger.nil?
+            name = ws_request.method_name
+            api_method = ws_request.api_method
+            params = ws_request.method_params
+            if api_method && api_method.expects
+              params = api_method.expects.zip(params).map{ |type, param| "#{type.name}=>#{param.inspect}" }
+            else
+              params = params.map{ |param| param.inspect }
             end
+            service = ws_request.service_name
+            Rails.logger.debug("\nWeb Service Request: #{name}(#{params.join(", ")}) Entrypoint: #{service}")
+            Rails.logger.debug(indent(body))
           end
+        end
 
-          def indent(body)
-            body.split(/\n/).map{|x| "  #{x}"}.join("\n")
+        def log_response(ws_response, elapsed=nil)
+          unless Rails.logger.nil?
+            elapsed = (elapsed ? " (%f):" % elapsed : ":")
+            Rails.logger.debug("\nWeb Service Response" + elapsed + " => #{ws_response.return_value.inspect}")
+            Rails.logger.debug(indent(ws_response.body))
           end
+        end
+
+        def indent(body)
+          body.split(/\n/).map{|x| "  #{x}"}.join("\n")
+        end
       end
 
       module WsdlAction # :nodoc:
