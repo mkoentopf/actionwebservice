@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.name = 'actionwebservice'
   s.summary = "Web service support for Action Pack."
   s.description = %q{Adds WSDL/SOAP and XML-RPC web service support to Action Pack}
-  s.version = "2.3.5"
+  s.version = "3.0.20"
 
   s.author = "Laurence A. Lee, Leon Breedt, Kent Sibilev"
   s.email = "rubyjedi@gmail.com, bitserf@gmail.com, ksibilev@yahoo.com"
@@ -26,8 +26,8 @@ Gem::Specification.new do |s|
   s.autorequire = 'actionwebservice'
 
   s.files = [ "Rakefile", "setup.rb", "README", "TODO", "CHANGELOG", "MIT-LICENSE" ]
-  s.files = s.files + Dir.glob( "examples/**/*" ).delete_if { |item| item.match( /\.(svn|git)/ ) }
-  s.files = s.files + Dir.glob( "lib/**/*" ).delete_if { |item| item.match( /\.(svn|git)/ ) }
-  s.files = s.files + Dir.glob( "test/**/*" ).delete_if { |item| item.match( /\.(svn|git)/ ) }
-  s.files = s.files + Dir.glob( "generators/**/*" ).delete_if { |item| item.match( /\.(svn|git)/ ) }
+  s.files += Dir['lib/**/*.rb']
+  s.files += Dir['test/**/*']
+  s.files += Dir['generators/**/*']
+  s.files += Dir['examples/**/*']
 end
