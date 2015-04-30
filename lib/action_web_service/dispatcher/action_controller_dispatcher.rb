@@ -36,18 +36,11 @@ module ActionWebService # :nodoc:
       end
 
       module InstanceMethods # :nodoc:
-        def log_error(exception=nil)
-          if exception
-            message = "\n#{exception.class} (#{exception.message}):\n"
-            Rails.logger.fatal message
-          end
-        end
-
         private
 
         def dispatch_web_service_request
           method = request.method.to_s.upcase
-          allowed_methods = self.class.web_service_api ? (self.class.web_service_api.allowed_http_methods || []) : [ :post ]
+          allowed_methods = self.class.web_service_api ? (self.class.web_service_api.allowed_http_methods || []) : [ :post, 'POST' ]
           allowed_methods = allowed_methods.map{|m| m.to_s.upcase }
           if !allowed_methods.include?(method)
             render :text => "#{method} not supported", :status=>500
@@ -71,18 +64,18 @@ module ActionWebService # :nodoc:
             end
             log_request(ws_request, request.raw_post)
             if exception
-              log_error(exception) unless Rails.logger.nil?
+              Rails.logger.error(exception) unless Rails.logger.nil?
               send_web_service_error_response(ws_request, exception)
             else
               send_web_service_response(ws_response, bm.real)
             end
           else
             exception ||= DispatcherError.new("Malformed SOAP or XML-RPC protocol message")
-            log_error(exception) unless Rails.logger.nil?
+            Rails.logger.error(exception) unless Rails.logger.nil?
             send_web_service_error_response(ws_request, exception)
           end
         rescue Exception => e
-          log_error(e) unless Rails.logger.nil?
+          Rails.logger_error(e) unless Rails.logger.nil?
           send_web_service_error_response(ws_request, e)
         end
 
@@ -159,14 +152,14 @@ module ActionWebService # :nodoc:
 
         def wsdl
           case request.method
-          when :get
+          when :get, 'GET'
             begin
               options = { :type => 'text/xml', :disposition => 'inline' }
               send_data(to_wsdl, options)
             rescue Exception => e
-              log_error(e) unless Rails.logger.nil?
+              Rails.logger.error(e) unless Rails.logger.nil?
             end
-          when :post
+          when :post, 'POST'
             render :status => 500, :text => 'POST not supported'
           end
         end
@@ -176,7 +169,7 @@ module ActionWebService # :nodoc:
             host = request.host_with_port
             relative_url_root = ::ActionController::Base.relative_url_root
             scheme = request.ssl? ? 'https' : 'http'
-            '%s://%s%s/%s/' % [scheme, host, relative_url_root, self.class.controller_path]
+            '%s://%s/%s/' % [scheme, host, self.class.controller_path]
           end
 
           def to_wsdl

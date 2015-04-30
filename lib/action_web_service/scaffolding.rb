@@ -40,23 +40,24 @@ module ActionWebService
       # can then be used as the entry point for invoking API methods from a web browser.
       def web_service_scaffold(action_name)
         add_template_helper(Helpers)
+
         module_eval <<-"end_eval", __FILE__, __LINE__ + 1
           def #{action_name}
-            if request.method == :get
+            if request.method == :get || request.method == "GET"
               setup_invocation_assigns
               render_invocation_scaffold 'methods'
             end
           end
 
           def #{action_name}_method_params
-            if request.method == :get
+            if request.method == :get || request.method == "GET"
               setup_invocation_assigns
               render_invocation_scaffold 'parameters'
             end
           end
 
           def #{action_name}_submit
-            if request.method == :post
+            if request.method == :post || request.method == "POST"
               setup_invocation_assigns
               protocol_name = params['protocol'] ? params['protocol'].to_sym : :soap
               case protocol_name
@@ -107,16 +108,18 @@ module ActionWebService
             def render_invocation_scaffold(action)
               customized_template = "\#{self.class.controller_path}/#{action_name}/\#{action}"
               default_template = scaffold_path(action)
+
               begin
-                content = @template.render(:file => customized_template)
+                content = render_to_string(file: customized_template)
               rescue ActionView::MissingTemplate
-                content = @template.render(:file => default_template)
+                content = render_to_string(file: default_template)
               end
-              @template.instance_variable_set("@content_for_layout", content)
-              if self.active_layout.nil?
-                render :file => scaffold_path("layout")
+
+              active_layout = self.send(:_layout)
+              if active_layout.nil?
+                render inline: content, file: scaffold_path('layout')
               else
-                render :file => self.active_layout, :use_full_path => true
+                render inline: content, file: active_layout, use_full_path: true
               end
             end
 
@@ -168,34 +171,42 @@ module ActionWebService
         end
         if type.structured?
           return content_tag('em', "Nested structural types not supported yet (#{type.name})") if was_structured
-          parameters = ""
-          type.each_member do |member_name, member_type|
-            label = method_parameter_label(member_name, member_type)
-            nested_content = method_parameter_input_fields(
-              method,
-              member_type,
-              "#{field_name_base}[#{idx}][#{member_name}]",
-              idx,
-              true)
-            if member_type.custom?
-              parameters << content_tag('li', label)
-              parameters << content_tag('ul', nested_content)
-            else
-              parameters << content_tag('li', label + ' ' + nested_content)
+
+          content_tag(:ul) do
+            type.each_member do |member_name, member_type|
+              label = method_parameter_label(member_name, member_type)
+
+              nested_content = method_parameter_input_fields(
+                method,
+                member_type,
+                "#{field_name_base}[#{idx}][#{member_name}]",
+                idx,
+                true)
+
+              if member_type.custom?
+                concat(content_tag(:li) do
+                  concat(label)
+                  concat(nested_content)
+                end)
+              else
+                concat(content_tag(:li) do
+                  concat(label)
+                  concat(nested_content)
+                end)
+              end
             end
           end
-          content_tag('ul', parameters)
         else
-          # If the data source was structured previously we already have the index set          
+          # If the data source was structured previously we already have the index set
           field_name_base = "#{field_name_base}[#{idx}]" unless was_structured
-          
+
           case type.type
           when :int
-            text_field_tag "#{field_name_base}"
+            text_field_tag("#{field_name_base}")
           when :string
-            text_field_tag "#{field_name_base}"
+            text_field_tag("#{field_name_base}")
           when :base64
-            text_area_tag "#{field_name_base}", nil, :size => "40x5"
+            text_area_tag("#{field_name_base}", nil, size: "40x5")
           when :bool
             radio_button_tag("#{field_name_base}", "true") + " True" +
             radio_button_tag("#{field_name_base}", "false") + "False"
@@ -225,10 +236,14 @@ module ActionWebService
 
       def service_method_list(service)
         action = @scaffold_action_name + '_method_params'
-        methods = service.api_methods_full.sort {|a, b| a[1] <=> b[1]}.map do |desc, name|
-          content_tag("li", link_to(name, :action => action, :service => service.name, :method => name))
+
+        content_tag(:ul) do
+          service.api_methods_full.sort {|a, b| a[1] <=> b[1]}.map do |desc, name|
+            concat(content_tag(:li) do
+              link_to(name, action: action, service: service.name, method: name)
+            end)
+          end
         end
-        content_tag("ul", methods.join("\n"))
       end
     end
 
