@@ -1,5 +1,4 @@
-# Action Web Service
-## Serving APIs on Rails
+# Action Web Service: Serving APIs on Rails
 
 Action Web Service provides a way to publish interoperable web service APIs with
 Rails without spending a lot of time delving into protocol details.
