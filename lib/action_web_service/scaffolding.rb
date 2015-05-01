@@ -128,8 +128,8 @@ module ActionWebService
             end
 
             def reset_invocation_response
-              erase_render_results
-              response.instance_variable_set :@header, Rack::Utils::HeaderHash.new(::ActionController::Response::DEFAULT_HEADERS.merge("cookie" => []))
+              self.instance_variable_set(:@_response_body, nil)
+              response.instance_variable_set :@header, Rack::Utils::HeaderHash.new("cookie" => [], 'Content-Type' => 'text/html')
             end
 
             def public_method_name(service_name, method_name)
@@ -217,7 +217,7 @@ module ActionWebService
             time = Time.now
             i = 0
 
-            tag = content_tag(:span) do
+            content_tag(:span) do
               %w|year month day hour minute second|.map do |name|
                 i += 1
                 concat(send("select_#{name}", time, :prefix => "#{field_name_base}[#{i}]", :discard_type => true))
@@ -229,7 +229,7 @@ module ActionWebService
             date = Date.today
             i = 0
 
-            tag = content_tag(:span) do
+            content_tag(:span) do
               %w|year month day|.map do |name|
                 i += 1
                 concat(send("select_#{name}", date, :prefix => "#{field_name_base}[#{i}]", :discard_type => true))
