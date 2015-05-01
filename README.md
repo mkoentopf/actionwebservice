@@ -1,13 +1,13 @@
-= Action Web Service -- Serving APIs on rails
+# Action Web Service -- Serving APIs on rails
 
 Action Web Service provides a way to publish interoperable web service APIs with
 Rails without spending a lot of time delving into protocol details.
 
-*UPDATE FOR RAILS 3+*
+## UPDATE FOR RAILS 3.0.20 and above
 
 I've updated this version of the gem to work with Rails 3 (and hopefully above).  Currently I have only tested it with Rails 3 so use with newer versions at your own peril.
 
-== Features
+## Features
 
 * SOAP RPC protocol support
 * Dynamic WSDL generation for APIs
@@ -18,7 +18,7 @@ I've updated this version of the gem to work with Rails 3 (and hopefully above).
 * Active Record model class support in signatures
 
 
-== Defining your APIs
+## Defining your APIs
 
 You specify the methods you want to make available as API methods in an
 ActionWebService::API::Base derivative, and then specify this API
@@ -28,7 +28,7 @@ The implementation of the methods is done separately from the API
 specification.
 
 
-==== Method name inflection
+### Method name inflection
 
 Action Web Service will camelcase the method names according to Rails Inflector
 rules for the API visible to public callers. What this means, for example,
@@ -40,27 +40,27 @@ If you do not desire this behaviour, you can turn it off with the
 ActionWebService::API::Base +inflect_names+ option.
 
 
-==== Inflection examples
+### Inflection examples
 
   :add       => Add
   :find_all  => FindAll
 
 
-==== Disabling inflection
+### Disabling inflection
 
   class PersonAPI < ActionWebService::API::Base
     inflect_names false
   end
 
 
-==== API definition example
+### API definition example
 
   class PersonAPI < ActionWebService::API::Base
     api_method :add, :expects => [:string, :string, :bool], :returns => [:int]
     api_method :remove, :expects => [:int], :returns => [:bool]
   end
 
-==== API usage example
+### API usage example
 
   class PersonController < ActionController::Base
     web_service_api PersonAPI
@@ -73,13 +73,13 @@ ActionWebService::API::Base +inflect_names+ option.
   end
 
 
-== Publishing your APIs
+## Publishing your APIs
 
 Action Web Service uses Action Pack to process protocol requests.  There are two
 modes of dispatching protocol requests, _Direct_, and _Delegated_.
 
 
-=== Direct dispatching
+### Direct dispatching
 
 This is the default mode. In this mode, public controller instance methods
 implement the API methods, and parameters are passed through to the methods in
@@ -93,7 +93,7 @@ controller to unwrap the protocol request, forward it on to the relevant method
 and send back the wrapped return value. <em>This action must not be
 overridden.</em>
 
-==== Direct dispatching example
+### Direct dispatching example
 
   class PersonController < ApplicationController
     web_service_api PersonAPI
@@ -114,7 +114,7 @@ For this example, protocol requests for +Add+ and +Remove+ methods sent to
 <tt>/person/api</tt> will be routed to the controller methods +add+ and +remove+.
 
 
-=== Delegated dispatching
+## Delegated dispatching
 
 This mode can be turned on by setting the +web_service_dispatching_mode+ option
 in a controller to <tt>:delegated</tt>.
@@ -123,7 +123,7 @@ In this mode, the controller contains one or more web service objects (objects
 that implement an ActionWebService::API::Base definition). These web service
 objects are each mapped onto one controller action only.
 
-==== Delegated dispatching example
+### Delegated dispatching example
 
   class ApiController < ApplicationController
     web_service_dispatching_mode :delegated
@@ -156,7 +156,7 @@ Other controller actions (actions that aren't the target of a +web_service+ call
 are ignored for ActionWebService purposes, and can do normal action tasks.
 
 
-=== Layered dispatching
+## Layered dispatching
 
 This mode can be turned on by setting the +web_service_dispatching_mode+ option
 in a controller to <tt>:layered</tt>.
@@ -170,7 +170,7 @@ for APIs where the XML-RPC method names have prefixes. An example of such
 a method name would be <tt>blogger.newPost</tt>.
 
 
-==== Layered dispatching example
+### Layered dispatching example
 
 
   class ApiController < ApplicationController
@@ -199,7 +199,7 @@ For this example, an XML-RPC call for a method with a name like
 method on the <tt>:mt</tt> service.
 
 
-== Customizing WSDL generation
+# Customizing WSDL generation
 
 You can customize the names used for the SOAP bindings in the generated
 WSDL by using the wsdl_service_name option in a controller:
@@ -219,7 +219,7 @@ The default namespace used is 'urn:ActionWebService', if you don't supply
 one.
 
 
-== ActionWebService and UTF-8
+# ActionWebService and UTF-8
 
 If you're going to be sending back strings containing non-ASCII UTF-8
 characters using the <tt>:string</tt> data type, you need to make sure that
@@ -237,10 +237,10 @@ Two ways of setting the default string encoding are:
   string <tt>'UTF8'</tt>
 
 
-== Testing your APIs
+# Testing your APIs
 
 
-=== Functional testing
+## Functional testing
 
 You can perform testing of your APIs by creating a functional test for the
 controller dispatching the API, and calling #invoke in the test case to
@@ -282,7 +282,7 @@ you can test XMLRPC like this:
     end
   end
 
-=== Scaffolding
+## Scaffolding
 
 You can also test your APIs with a web browser by attaching scaffolding
 to the controller.
@@ -299,7 +299,7 @@ Navigating to this action lets you select the method to invoke, supply the param
 and view the result of the invocation.
 
 
-== Using the client support
+# Using the client support
 
 Action Web Service includes client classes that can use the same API
 definition as the server. The advantage of this approach is that your client
@@ -316,7 +316,7 @@ Web services protocol specifications are complex, and Action Web Service client
 support can only be guaranteed to work with a subset.
 
 
-==== Factory created client example
+### Factory created client example
 
   class BlogManagerController < ApplicationController
     web_client_api :blogger, :xmlrpc, 'http://url/to/blog/api/RPC2', :handler_name => 'blogger'
@@ -328,7 +328,7 @@ support can only be guaranteed to work with a subset.
 
 See ActionWebService::API::ActionController::ClassMethods for more details.
 
-==== Manually created client example
+### Manually created client example
 
   class PersonAPI < ActionWebService::API::Base
     api_method :find_all, :returns => [[Person]]
@@ -348,7 +348,7 @@ See ActionWebService::API::ActionController::ClassMethods for more details.
 
 See ActionWebService::Client::Soap and ActionWebService::Client::XmlRpc for more details.
 
-== Dependencies
+# Dependencies
 
 Action Web Service requires that the Action Pack and Active Record are either
 available to be required immediately or are accessible as GEMs.
@@ -358,25 +358,19 @@ library. At least version 1.8.2 final (2004-12-25) of Ruby is recommended; this
 is the version tested against.
 
 
-== Download
-
-The latest Action Web Service version can be downloaded from
-http://rubyforge.org/projects/actionservice
-
-
-== Installation
+# Installation
 
 You can install Action Web Service with the following command.
 
   % [sudo] ruby setup.rb
 
 
-== License
+# License
 
 Action Web Service is released under the MIT license.
 
 
-== Support
+# Support
 
 The Ruby on Rails mailing list
 
