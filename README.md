@@ -1,11 +1,12 @@
-# Action Web Service -- Serving APIs on rails
+# Action Web Service
+## Serving APIs on Rails
 
 Action Web Service provides a way to publish interoperable web service APIs with
 Rails without spending a lot of time delving into protocol details.
 
 ## UPDATE FOR RAILS 3.0.20 and above
 
-I've updated this version of the gem to work with Rails 3 (and hopefully above).  Currently I have only tested it with Rails 3 so use with newer versions at your own peril.
+This plugin has been ported from [rubyjedi](https://github.com/rubyjedi/actionwebservice) that was the most up to date version I could find that worked with my Rails 2.3 applications.  The purpose of this forked version is part of an upgrade path from our legacy Rails 2.3 apps to Rails 4 and above.  I will tag releases to mark the Ruby versions that were tested at a given point (3.0.20, 3.2.21, 4.0.13, 4.2.1, etc.).  I will try my best to keep compatibility as up to date as possible.
 
 ## Features
 
