@@ -169,6 +169,7 @@ module ActionWebService
         if type.array?
           return content_tag('em', "Typed array input fields not supported yet (#{type.name})")
         end
+
         if type.structured?
           return content_tag('em', "Nested structural types not supported yet (#{type.name})") if was_structured
 
@@ -215,17 +216,25 @@ module ActionWebService
           when :time, :datetime
             time = Time.now
             i = 0
-            %w|year month day hour minute second|.map do |name|
-              i += 1
-              send("select_#{name}", time, :prefix => "#{field_name_base}[#{i}]", :discard_type => true)
-            end.join
+
+            tag = content_tag(:span) do
+              %w|year month day hour minute second|.map do |name|
+                i += 1
+                concat(send("select_#{name}", time, :prefix => "#{field_name_base}[#{i}]", :discard_type => true))
+              end
+            end
+
+            binding.pry
           when :date
             date = Date.today
             i = 0
-            %w|year month day|.map do |name|
-              i += 1
-              send("select_#{name}", date, :prefix => "#{field_name_base}[#{i}]", :discard_type => true)
-            end.join
+
+            tag = content_tag(:span) do
+              %w|year month day|.map do |name|
+                i += 1
+                concat(send("select_#{name}", date, :prefix => "#{field_name_base}[#{i}]", :discard_type => true))
+              end
+            end
           end
         end
       end
