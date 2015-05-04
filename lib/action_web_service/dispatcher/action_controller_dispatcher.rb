@@ -75,7 +75,7 @@ module ActionWebService # :nodoc:
             send_web_service_error_response(ws_request, exception)
           end
         rescue Exception => e
-          Rails.logger_error(e) unless Rails.logger.nil?
+          Rails.logger.error(e) unless Rails.logger.nil?
           send_web_service_error_response(ws_request, e)
         end
 
