@@ -167,7 +167,7 @@ module ActionWebService # :nodoc:
         private
           def base_uri
             host = request.host_with_port
-            relative_url_root = ::ActionController::Base.relative_url_root
+            relative_url_root = root_path
             scheme = request.ssl? ? 'https' : 'http'
             '%s://%s/%s/' % [scheme, host, self.class.controller_path]
           end
