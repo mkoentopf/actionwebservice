@@ -43,8 +43,8 @@ module ActionWebService
     end
 
     class << self
-      class_attribute :struct_members
-      self.struct_members = {}
+      class_attribute :members
+      self.members = {}
 
       # Creates a structure member with the specified +name+ and +type+. Additional wsdl
       # schema properties may be specified in the optional hash +options+. Generates
@@ -53,19 +53,15 @@ module ActionWebService
         name = name.to_sym
         type = ActionWebService::SignatureTypes.canonical_signature_entry({ name => type }, 0)
 
-        self.struct_members[name] = [type, options]
+        self.members[name] = [type, options]
         class_eval <<-END
           def #{name}; @#{name}; end
           def #{name}=(value); @#{name} = value; end
         END
       end
 
-      def members # :nodoc:
-        self.struct_members
-      end
-
       def member_type(name) # :nodoc:
-        type, options = members[name.to_sym]
+        type, options = self.members[name.to_sym]
         type
       end
     end
