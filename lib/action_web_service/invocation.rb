@@ -5,6 +5,11 @@ module ActionWebService # :nodoc:
     end
 
     def self.included(base) # :nodoc:
+      base.send(:class_attribute, :before_invocation_interceptors)
+      base.send(:class_attribute, :after_invocation_interceptors)
+      base.send(:class_attribute, :included_intercepted_methods)
+      base.send(:class_attribute, :excluded_intercepted_methods)
+
       base.extend(ClassMethods)
       base.send(:include, ActionWebService::Invocation::InstanceMethods)
     end
@@ -82,46 +87,54 @@ module ActionWebService # :nodoc:
       alias :after_invocation :append_after_invocation
 
       def before_invocation_interceptors # :nodoc:
-        read_inheritable_attribute("before_invocation_interceptors")
+        self.before_invocation_interceptors
       end
 
       def after_invocation_interceptors # :nodoc:
-        read_inheritable_attribute("after_invocation_interceptors")
+        self.after_invocation_interceptors
       end
 
       def included_intercepted_methods # :nodoc:
-        read_inheritable_attribute("included_intercepted_methods") || {}
+        self.included_intercepted_methods || {}
       end
 
       def excluded_intercepted_methods # :nodoc:
-        read_inheritable_attribute("excluded_intercepted_methods") || {}
+        self.excluded_intercepted_methods || {}
       end
 
       private
-        def append_interceptors_to_chain(condition, interceptors)
-          write_inheritable_array("#{condition}_invocation_interceptors", interceptors)
+
+      def append_interceptors_to_chain(condition, interceptors)
+        unless self.defined? "#{condition}_invocation_interceptors".to_sym
+          self.send(:class_attribute, "#{condition}_invocation_interceptors".to_sym)
+        end
+        instance_variable_set("#{condition}_invocation_interceptors", interceptors)
+      end
+
+      def prepend_interceptors_to_chain(condition, interceptors)
+        unless self.defined? "#{condition}_invocation_interceptors".to_sym
+          self.send(:class_attribute, "#{condition}_invocation_interceptors".to_sym)
         end
 
-        def prepend_interceptors_to_chain(condition, interceptors)
-          interceptors = interceptors + read_inheritable_attribute("#{condition}_invocation_interceptors")
-          write_inheritable_attribute("#{condition}_invocation_interceptors", interceptors)
-        end
+        interceptors = interceptors + instance_variable_get("#{condition}_invocation_interceptors")
+        instance_variable_set("#{condition}_invocation_interceptors", interceptors)
+      end
 
-        def extract_conditions!(interceptors)
-          return nil unless interceptors.last.is_a? Hash
-          interceptors.pop
-        end
+      def extract_conditions!(interceptors)
+        return nil unless interceptors.last.is_a? Hash
+        interceptors.pop
+      end
 
-        def add_interception_conditions(interceptors, conditions)
-          return unless conditions
-          included, excluded = conditions[:only], conditions[:except]
-          write_inheritable_hash("included_intercepted_methods", condition_hash(interceptors, included)) && return if included
-          write_inheritable_hash("excluded_intercepted_methods", condition_hash(interceptors, excluded)) if excluded
-        end
+      def add_interception_conditions(interceptors, conditions)
+        return unless conditions
+        included, excluded = conditions[:only], conditions[:except]
+        self.included_intercepted_methods = condition_hash(interceptors, included) && return if included
+        self.excluded_intercepted_methods = condition_hash(interceptors, excluded) if excluded
+      end
 
-        def condition_hash(interceptors, *methods)
-          interceptors.inject({}) {|hash, interceptor| hash.merge(interceptor => methods.flatten.map {|method| method.to_s})}
-        end
+      def condition_hash(interceptors, *methods)
+        interceptors.inject({}) {|hash, interceptor| hash.merge(interceptor => methods.flatten.map {|method| method.to_s})}
+      end
     end
 
     module InstanceMethods # :nodoc:

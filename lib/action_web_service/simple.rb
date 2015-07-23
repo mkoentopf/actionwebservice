@@ -20,35 +20,35 @@ module ActionWebService
   #
   #
   class Simple
-
     def initialize(value)
       @value = value
     end
-    
+
     class << self
+      class_attribute :xml_base
+      class_attribute :simple_restrictions
+      self.simple_restrictions = {}
+
       def base(type)
         type = type.to_s.camelize(:lower)
-        write_inheritable_attribute("xml_base", type)
+        self.xml_base = type
         class_eval <<-END
           def xml_base; "#{type}"; end
         END
       end
-      
+
       def restriction_base
-        read_inheritable_attribute("xml_base") || ""
+        self.xml_base || ''
       end
-      
+
       def restriction(type, value)
         type = type.to_s.camelize(:lower)
-        write_inheritable_hash("simple_restrictions", type => value)
+        self.simple_restrictions[type] = value
       end
-      
+
       def restrictions
-        read_inheritable_attribute("simple_restrictions") || {}
+        self.simple_restrictions
       end
-      
     end
-
   end
-
 end
