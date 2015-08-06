@@ -223,8 +223,6 @@ module ActionWebService
                 concat(send("select_#{name}", time, :prefix => "#{field_name_base}[#{i}]", :discard_type => true))
               end
             end
-
-            binding.pry
           when :date
             date = Date.today
             i = 0
