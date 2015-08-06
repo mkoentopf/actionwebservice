@@ -10,7 +10,10 @@ module ActionWebService # :nodoc:
 
       module ClassMethods # :nodoc:
         def register_protocol(klass)
-          self.web_service_protocols = [klass]
+          unless self.web_service_protocols.present?
+            self.web_service_protocols = Array.new
+          end
+          self.web_service_protocols << klass
         end
       end
 
