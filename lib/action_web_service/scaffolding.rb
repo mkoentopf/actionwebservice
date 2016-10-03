@@ -110,16 +110,16 @@ module ActionWebService
               default_template = scaffold_path(action)
 
               begin
-                content = render_to_string(file: customized_template)
+                content = render_to_string(:file => customized_template)
               rescue ActionView::MissingTemplate
-                content = render_to_string(file: default_template)
+                content = render_to_string(:file => default_template)
               end
 
               active_layout = self.send(:_layout)
               if active_layout.nil?
-                render inline: content, file: scaffold_path('layout')
+                render :inline => content, :file => scaffold_path('layout')
               else
-                render inline: content, file: active_layout, use_full_path: true
+                render :inline => content, :file => active_layout, :use_full_path => true
               end
             end
 
@@ -207,7 +207,7 @@ module ActionWebService
           when :string
             text_field_tag("#{field_name_base}")
           when :base64
-            text_area_tag("#{field_name_base}", nil, size: "40x5")
+            text_area_tag("#{field_name_base}", nil, :size => "40x5")
           when :bool
             radio_button_tag("#{field_name_base}", "true") + " True" +
             radio_button_tag("#{field_name_base}", "false") + "False"
@@ -249,7 +249,7 @@ module ActionWebService
         content_tag(:ul) do
           service.api_methods_full.sort {|a, b| a[1] <=> b[1]}.map do |desc, name|
             concat(content_tag(:li) do
-              link_to(name, action: action, service: service.name, method: name)
+              link_to(name, :action => action, :service => service.name, :method => name)
             end)
           end
         end
