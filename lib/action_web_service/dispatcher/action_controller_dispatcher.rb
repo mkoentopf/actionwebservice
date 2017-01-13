@@ -151,7 +151,6 @@ module ActionWebService # :nodoc:
         SoapHttpTransport = 'http://schemas.xmlsoap.org/soap/http'
 
         def wsdl
-          binding.pry
           case request.method
           when :get, 'GET'
             begin
