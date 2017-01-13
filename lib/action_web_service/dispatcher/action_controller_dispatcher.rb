@@ -151,6 +151,7 @@ module ActionWebService # :nodoc:
         SoapHttpTransport = 'http://schemas.xmlsoap.org/soap/http'
 
         def wsdl
+          binding.pry
           case request.method
           when :get, 'GET'
             begin
@@ -185,7 +186,7 @@ module ActionWebService # :nodoc:
             case dispatching_mode
             when :direct
               api = self.class.web_service_api
-              web_service_name = controller_class_name.sub(/Controller$/, '').underscore
+              web_service_name = controller_name
               apis[web_service_name] = [api, register_api(api, marshaler)]
             when :delegated, :layered
               self.class.web_services.each do |web_service_name, info|
