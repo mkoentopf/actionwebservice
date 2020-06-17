@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.autorequire = 'actionwebservice'
 
-  s.required_ruby_version = '~> 1.9'
+  # s.required_ruby_version = '~> 1.9'
 
   s.files = [ "Rakefile", "setup.rb", "README", "TODO", "CHANGELOG", "MIT-LICENSE" ]
   s.files += Dir['lib/**/*.rb']
